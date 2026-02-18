@@ -20,6 +20,11 @@ const commands = [
                 .setDescription('your message')
                 .setRequired(true)
         )
+        .addStringOption(option =>
+            option.setName('image')
+                .setDescription('image or GIF link (optional)')
+                .setRequired(false)
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .toJSON()
 ];
@@ -28,18 +33,13 @@ const rest = new REST({ version: '10' }).setToken(token);
 
 (async () => {
     try {
-        console.log('Started refreshing application (/) commands.');
-        
-        // ✅ التصحيح: سجل الأوامر لكل سيرفر
         for (const guildId of guildIds) {
             await rest.put(
                 Routes.applicationGuildCommands(clientId, guildId),
                 { body: commands }
             );
-            console.log(`Commands registered for guild: ${guildId}`);
         }
-
-        console.log('Successfully reloaded application (/) commands.');
+        console.log('Commands registered successfully.');
     } catch (error) {
         console.error(error);
     }
@@ -54,8 +54,8 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.commandName === 'dm') {
         const text = interaction.options.getString('message');
+        const imageUrl = interaction.options.getString('image');
 
-        // ✅ تحسين: رد فوري عشان ما ينتهي وقت التفاعل
         await interaction.reply({ content: 'جاري إرسال الرسائل... ⏳', ephemeral: true });
 
         const members = await interaction.guild.members.fetch();
@@ -64,13 +64,14 @@ client.on('interactionCreate', async interaction => {
         for (const [, member] of members) {
             if (!member.user.bot) {
                 try {
-                    await member.send(text);
+                    const messageData = { content: text };
+                    if (imageUrl) messageData.files = [imageUrl];
+                    await member.send(messageData);
                     successCount++;
                 } catch {}
             }
         }
 
-        // ✅ تحديث الرد بعد الانتهاء
         await interaction.editReply({ content: `تم إرسال الرسالة لـ ${successCount} عضو ✅` });
     }
 });
