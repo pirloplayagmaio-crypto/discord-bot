@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
 
 const token = process.env.TOKEN;
@@ -10,37 +10,147 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildVoiceStates
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessages
     ]
 });
 
+// تخزين التحذيرات
+const warnings = new Map();
+
 const commands = [
+    // DM
     new SlashCommandBuilder()
         .setName('dm')
-        .setDescription('use it to dm members')
-        .addStringOption(option =>
-            option.setName('message')
-                .setDescription('your message')
-                .setRequired(true)
-        )
-        .addStringOption(option =>
-            option.setName('image')
-                .setDescription('image or GIF link (optional)')
-                .setRequired(false)
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .toJSON()
-];
+        .setDescription('Send a DM to all members')
+        .addStringOption(o => o.setName('message').setDescription('Your message').setRequired(true))
+        .addStringOption(o => o.setName('image').setDescription('Image or GIF link (optional)').setRequired(false))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    // Kick
+    new SlashCommandBuilder()
+        .setName('kick')
+        .setDescription('Kick a member')
+        .addUserOption(o => o.setName('user').setDescription('User to kick').setRequired(true))
+        .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(false))
+        .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+
+    // Ban
+    new SlashCommandBuilder()
+        .setName('ban')
+        .setDescription('Ban a member')
+        .addUserOption(o => o.setName('user').setDescription('User to ban').setRequired(true))
+        .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(false))
+        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+
+    // Unban
+    new SlashCommandBuilder()
+        .setName('unban')
+        .setDescription('Unban a member')
+        .addStringOption(o => o.setName('userid').setDescription('User ID to unban').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+
+    // Mute
+    new SlashCommandBuilder()
+        .setName('mute')
+        .setDescription('Mute a member')
+        .addUserOption(o => o.setName('user').setDescription('User to mute').setRequired(true))
+        .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(false))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+    // Unmute
+    new SlashCommandBuilder()
+        .setName('unmute')
+        .setDescription('Unmute a member')
+        .addUserOption(o => o.setName('user').setDescription('User to unmute').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+    // Timeout
+    new SlashCommandBuilder()
+        .setName('timeout')
+        .setDescription('Timeout a member')
+        .addUserOption(o => o.setName('user').setDescription('User to timeout').setRequired(true))
+        .addIntegerOption(o => o.setName('minutes').setDescription('Duration in minutes').setRequired(true))
+        .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(false))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+    // Untimeout
+    new SlashCommandBuilder()
+        .setName('untimeout')
+        .setDescription('Remove timeout from a member')
+        .addUserOption(o => o.setName('user').setDescription('User to untimeout').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+    // Clear
+    new SlashCommandBuilder()
+        .setName('clear')
+        .setDescription('Clear messages')
+        .addIntegerOption(o => o.setName('amount').setDescription('Number of messages (1-100)').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+
+    // Lock
+    new SlashCommandBuilder()
+        .setName('lock')
+        .setDescription('Lock the channel')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+
+    // Unlock
+    new SlashCommandBuilder()
+        .setName('unlock')
+        .setDescription('Unlock the channel')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+
+    // Give Role
+    new SlashCommandBuilder()
+        .setName('giverole')
+        .setDescription('Give a role to a member')
+        .addUserOption(o => o.setName('user').setDescription('User').setRequired(true))
+        .addRoleOption(o => o.setName('role').setDescription('Role to give').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+
+    // Remove Role
+    new SlashCommandBuilder()
+        .setName('removerole')
+        .setDescription('Remove a role from a member')
+        .addUserOption(o => o.setName('user').setDescription('User').setRequired(true))
+        .addRoleOption(o => o.setName('role').setDescription('Role to remove').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+
+    // Warn
+    new SlashCommandBuilder()
+        .setName('warn')
+        .setDescription('Warn a member')
+        .addUserOption(o => o.setName('user').setDescription('User to warn').setRequired(true))
+        .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+    // Unwarn
+    new SlashCommandBuilder()
+        .setName('unwarn')
+        .setDescription('Remove last warning from a member')
+        .addUserOption(o => o.setName('user').setDescription('User').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+    // Warnings
+    new SlashCommandBuilder()
+        .setName('warnings')
+        .setDescription('Show warnings of a member')
+        .addUserOption(o => o.setName('user').setDescription('User').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+    // Help
+    new SlashCommandBuilder()
+        .setName('help')
+        .setDescription('Show all commands'),
+
+].map(c => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(token);
 
 (async () => {
     try {
         for (const guildId of guildIds) {
-            await rest.put(
-                Routes.applicationGuildCommands(clientId, guildId),
-                { body: commands }
-            );
+            await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
         }
         console.log('Commands registered successfully.');
     } catch (error) {
@@ -71,24 +181,25 @@ client.once('ready', () => {
 
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (oldState.member.id === client.user.id && !newState.channelId) {
-        setTimeout(() => {
-            joinVoice(oldState.guild);
-        }, 3000);
+        setTimeout(() => joinVoice(oldState.guild), 3000);
     }
 });
+
+process.on('unhandledRejection', () => {});
+process.on('uncaughtException', () => {});
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.commandName === 'dm') {
+    const { commandName } = interaction;
+
+    // DM
+    if (commandName === 'dm') {
         const text = interaction.options.getString('message');
         const imageUrl = interaction.options.getString('image');
-
         await interaction.reply({ content: 'جاري إرسال الرسائل... ⏳', ephemeral: true });
-
         const members = await interaction.guild.members.fetch();
         let successCount = 0;
-
         for (const [, member] of members) {
             if (!member.user.bot) {
                 try {
@@ -99,10 +210,205 @@ client.on('interactionCreate', async interaction => {
                 } catch {}
             }
         }
-
         await interaction.editReply({ content: `تم إرسال الرسالة لـ ${successCount} عضو ✅` });
     }
+
+    // Kick
+    if (commandName === 'kick') {
+        const user = interaction.options.getMember('user');
+        const reason = interaction.options.getString('reason') || 'No reason';
+        try {
+            await user.kick(reason);
+            await interaction.reply({ content: `تم طرد ${user.user.tag} ✅`, ephemeral: true });
+        } catch {
+            await interaction.reply({ content: 'فشل الطرد ❌', ephemeral: true });
+        }
+    }
+
+    // Ban
+    if (commandName === 'ban') {
+        const user = interaction.options.getMember('user');
+        const reason = interaction.options.getString('reason') || 'No reason';
+        try {
+            await user.ban({ reason });
+            await interaction.reply({ content: `تم بان ${user.user.tag} ✅`, ephemeral: true });
+        } catch {
+            await interaction.reply({ content: 'فشل البان ❌', ephemeral: true });
+        }
+    }
+
+    // Unban
+    if (commandName === 'unban') {
+        const userId = interaction.options.getString('userid');
+        try {
+            await interaction.guild.members.unban(userId);
+            await interaction.reply({ content: `تم رفع البان ✅`, ephemeral: true });
+        } catch {
+            await interaction.reply({ content: 'فشل رفع البان ❌', ephemeral: true });
+        }
+    }
+
+    // Mute
+    if (commandName === 'mute') {
+        const user = interaction.options.getMember('user');
+        try {
+            await user.timeout(28 * 24 * 60 * 60 * 1000);
+            await interaction.reply({ content: `تم ميوت ${user.user.tag} ✅`, ephemeral: true });
+        } catch {
+            await interaction.reply({ content: 'فشل الميوت ❌', ephemeral: true });
+        }
+    }
+
+    // Unmute
+    if (commandName === 'unmute') {
+        const user = interaction.options.getMember('user');
+        try {
+            await user.timeout(null);
+            await interaction.reply({ content: `تم رفع الميوت عن ${user.user.tag} ✅`, ephemeral: true });
+        } catch {
+            await interaction.reply({ content: 'فشل رفع الميوت ❌', ephemeral: true });
+        }
+    }
+
+    // Timeout
+    if (commandName === 'timeout') {
+        const user = interaction.options.getMember('user');
+        const minutes = interaction.options.getInteger('minutes');
+        const reason = interaction.options.getString('reason') || 'No reason';
+        try {
+            await user.timeout(minutes * 60 * 1000, reason);
+            await interaction.reply({ content: `تم تايم اوت ${user.user.tag} لمدة ${minutes} دقيقة ✅`, ephemeral: true });
+        } catch {
+            await interaction.reply({ content: 'فشل التايم اوت ❌', ephemeral: true });
+        }
+    }
+
+    // Untimeout
+    if (commandName === 'untimeout') {
+        const user = interaction.options.getMember('user');
+        try {
+            await user.timeout(null);
+            await interaction.reply({ content: `تم رفع التايم اوت عن ${user.user.tag} ✅`, ephemeral: true });
+        } catch {
+            await interaction.reply({ content: 'فشل رفع التايم اوت ❌', ephemeral: true });
+        }
+    }
+
+    // Clear
+    if (commandName === 'clear') {
+        const amount = interaction.options.getInteger('amount');
+        try {
+            await interaction.channel.bulkDelete(amount, true);
+            await interaction.reply({ content: `تم حذف ${amount} رسالة ✅`, ephemeral: true });
+        } catch {
+            await interaction.reply({ content: 'فشل الحذف ❌', ephemeral: true });
+        }
+    }
+
+    // Lock
+    if (commandName === 'lock') {
+        try {
+            await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
+            await interaction.reply({ content: 'تم قفل القناة 🔒' });
+        } catch {
+            await interaction.reply({ content: 'فشل القفل ❌', ephemeral: true });
+        }
+    }
+
+    // Unlock
+    if (commandName === 'unlock') {
+        try {
+            await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: true });
+            await interaction.reply({ content: 'تم فتح القناة 🔓' });
+        } catch {
+            await interaction.reply({ content: 'فشل الفتح ❌', ephemeral: true });
+        }
+    }
+
+    // Give Role
+    if (commandName === 'giverole') {
+        const user = interaction.options.getMember('user');
+        const role = interaction.options.getRole('role');
+        try {
+            await user.roles.add(role);
+            await interaction.reply({ content: `تم إعطاء رول ${role.name} لـ ${user.user.tag} ✅`, ephemeral: true });
+        } catch {
+            await interaction.reply({ content: 'فشل إعطاء الرول ❌', ephemeral: true });
+        }
+    }
+
+    // Remove Role
+    if (commandName === 'removerole') {
+        const user = interaction.options.getMember('user');
+        const role = interaction.options.getRole('role');
+        try {
+            await user.roles.remove(role);
+            await interaction.reply({ content: `تم إزالة رول ${role.name} من ${user.user.tag} ✅`, ephemeral: true });
+        } catch {
+            await interaction.reply({ content: 'فشل إزالة الرول ❌', ephemeral: true });
+        }
+    }
+
+    // Warn
+    if (commandName === 'warn') {
+        const user = interaction.options.getUser('user');
+        const reason = interaction.options.getString('reason');
+        if (!warnings.has(user.id)) warnings.set(user.id, []);
+        warnings.get(user.id).push({ reason, date: new Date().toLocaleDateString() });
+        await interaction.reply({ content: `تم تحذير ${user.tag} بسبب: ${reason} ✅`, ephemeral: true });
+    }
+
+    // Unwarn
+    if (commandName === 'unwarn') {
+        const user = interaction.options.getUser('user');
+        if (warnings.has(user.id) && warnings.get(user.id).length > 0) {
+            warnings.get(user.id).pop();
+            await interaction.reply({ content: `تم حذف آخر تحذير من ${user.tag} ✅`, ephemeral: true });
+        } else {
+            await interaction.reply({ content: 'لا يوجد تحذيرات ❌', ephemeral: true });
+        }
+    }
+
+    // Warnings
+    if (commandName === 'warnings') {
+        const user = interaction.options.getUser('user');
+        const userWarnings = warnings.get(user.id) || [];
+        if (userWarnings.length === 0) {
+            await interaction.reply({ content: `${user.tag} ليس لديه تحذيرات ✅`, ephemeral: true });
+        } else {
+            const embed = new EmbedBuilder()
+                .setTitle(`تحذيرات ${user.tag}`)
+                .setColor('Red')
+                .setDescription(userWarnings.map((w, i) => `**${i + 1}.** ${w.reason} - ${w.date}`).join('\n'));
+            await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+    }
+
+    // Help
+    if (commandName === 'help') {
+        const embed = new EmbedBuilder()
+            .setTitle('📋 قائمة الأوامر')
+            .setColor('Blue')
+            .addFields(
+                { name: '📨 /dm', value: 'إرسال رسالة لجميع الأعضاء' },
+                { name: '👢 /kick', value: 'طرد عضو' },
+                { name: '🔨 /ban', value: 'بان عضو' },
+                { name: '✅ /unban', value: 'رفع البان' },
+                { name: '🔇 /mute', value: 'ميوت عضو' },
+                { name: '🔊 /unmute', value: 'رفع الميوت' },
+                { name: '⏱️ /timeout', value: 'تايم اوت عضو' },
+                { name: '✅ /untimeout', value: 'رفع التايم اوت' },
+                { name: '🗑️ /clear', value: 'حذف رسائل' },
+                { name: '🔒 /lock', value: 'قفل القناة' },
+                { name: '🔓 /unlock', value: 'فتح القناة' },
+                { name: '🎭 /giverole', value: 'إعطاء رول' },
+                { name: '❌ /removerole', value: 'إزالة رول' },
+                { name: '⚠️ /warn', value: 'تحذير عضو' },
+                { name: '✅ /unwarn', value: 'حذف تحذير' },
+                { name: '📋 /warnings', value: 'عرض تحذيرات عضو' }
+            );
+        await interaction.reply({ embeds: [embed] });
+    }
 });
-process.on('unhandledRejection', () => {});
-process.on('uncaughtException', () => {});
+
 client.login(token);
