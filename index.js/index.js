@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { joinVoiceChannel } = require('@discordjs/voice');
 
 const token = process.env.TOKEN;
 const clientId = "1473402977745109052";
@@ -7,7 +8,8 @@ const guildIds = ["1107309126171770912", "1453149447541227624"];
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildVoiceStates
     ]
 });
 
@@ -25,6 +27,16 @@ const commands = [
                 .setDescription('image or GIF link (optional)')
                 .setRequired(false)
         )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .toJSON(),
+    new SlashCommandBuilder()
+        .setName('join')
+        .setDescription('join your voice channel')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .toJSON(),
+    new SlashCommandBuilder()
+        .setName('leave')
+        .setDescription('leave the voice channel')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .toJSON()
 ];
@@ -73,6 +85,30 @@ client.on('interactionCreate', async interaction => {
         }
 
         await interaction.editReply({ content: `تم إرسال الرسالة لـ ${successCount} عضو ✅` });
+    }
+
+    if (interaction.commandName === 'join') {
+        const voiceChannel = interaction.member.voice.channel;
+        if (!voiceChannel) {
+            return interaction.reply({ content: 'يجب أن تكون في مكالمة صوتية أولاً!', ephemeral: true });
+        }
+        joinVoiceChannel({
+            channelId: voiceChannel.id,
+            guildId: interaction.guild.id,
+            adapterCreator: interaction.guild.voiceAdapterCreator,
+            selfDeaf: false
+        });
+        await interaction.reply({ content: 'دخلت المكالمة ✅', ephemeral: true });
+    }
+
+    if (interaction.commandName === 'leave') {
+        const connection = require('@discordjs/voice').getVoiceConnection(interaction.guild.id);
+        if (connection) {
+            connection.destroy();
+            await interaction.reply({ content: 'خرجت من المكالمة ✅', ephemeral: true });
+        } else {
+            await interaction.reply({ content: 'البوت مو في مكالمة!', ephemeral: true });
+        }
     }
 });
 
