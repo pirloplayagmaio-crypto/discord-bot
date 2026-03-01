@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
+const { joinVoiceChannel } = require('@discordjs/voice');
 
 const token = process.env.TOKEN;
 const clientId = "1473402977745109052";
@@ -160,7 +160,7 @@ client.on('interactionCreate', async interaction => {
     if (commandName === 'dm') {
         const text = interaction.options.getString('message');
         const imageUrl = interaction.options.getString('image');
-        await interaction.reply({ content: 'جاري إرسال الرسائل... ⏳', flags: 64 });
+        await interaction.reply({ content: 'Sending messages... ⏳' });
         const members = await interaction.guild.members.fetch();
         let successCount = 0;
         for (const [, member] of members) {
@@ -173,28 +173,44 @@ client.on('interactionCreate', async interaction => {
                 } catch {}
             }
         }
-        await interaction.editReply({ content: `تم إرسال الرسالة لـ ${successCount} عضو ✅` });
+        await interaction.editReply({ content: `Message sent to ${successCount} members ✅` });
     }
 
     if (commandName === 'kick') {
         const user = interaction.options.getMember('user');
-        const reason = interaction.options.getString('reason') || 'No reason';
+        const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
             await user.kick(reason);
-            await interaction.reply({ content: `تم طرد ${user.user.tag} ✅`, flags: 64 });
+            const embed = new EmbedBuilder()
+                .setColor('Orange')
+                .setTitle('Member Kicked')
+                .addFields(
+                    { name: 'User', value: `${user.user.tag}`, inline: true },
+                    { name: 'Reason', value: reason, inline: true }
+                );
+            await interaction.reply({ embeds: [embed] });
+            try { await user.send(`You have been **kicked** from **${interaction.guild.name}**\nReason: ${reason}`); } catch {}
         } catch {
-            await interaction.reply({ content: 'فشل الطرد ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to kick ❌' });
         }
     }
 
     if (commandName === 'ban') {
         const user = interaction.options.getMember('user');
-        const reason = interaction.options.getString('reason') || 'No reason';
+        const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
             await user.ban({ reason });
-            await interaction.reply({ content: `تم بان ${user.user.tag} ✅`, flags: 64 });
+            const embed = new EmbedBuilder()
+                .setColor('Red')
+                .setTitle('Member Banned')
+                .addFields(
+                    { name: 'User', value: `${user.user.tag}`, inline: true },
+                    { name: 'Reason', value: reason, inline: true }
+                );
+            await interaction.reply({ embeds: [embed] });
+            try { await user.send(`You have been **banned** from **${interaction.guild.name}**\nReason: ${reason}`); } catch {}
         } catch {
-            await interaction.reply({ content: 'فشل البان ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to ban ❌' });
         }
     }
 
@@ -202,19 +218,28 @@ client.on('interactionCreate', async interaction => {
         const userId = interaction.options.getString('userid');
         try {
             await interaction.guild.members.unban(userId);
-            await interaction.reply({ content: `تم رفع البان ✅`, flags: 64 });
+            await interaction.reply({ content: `User unbanned successfully ✅` });
         } catch {
-            await interaction.reply({ content: 'فشل رفع البان ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to unban ❌' });
         }
     }
 
     if (commandName === 'mute') {
         const user = interaction.options.getMember('user');
+        const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
-            await user.timeout(28 * 24 * 60 * 60 * 1000);
-            await interaction.reply({ content: `تم ميوت ${user.user.tag} ✅`, flags: 64 });
+            await user.timeout(28 * 24 * 60 * 60 * 1000, reason);
+            const embed = new EmbedBuilder()
+                .setColor('Grey')
+                .setTitle('Member Muted')
+                .addFields(
+                    { name: 'User', value: `${user.user.tag}`, inline: true },
+                    { name: 'Reason', value: reason, inline: true }
+                );
+            await interaction.reply({ embeds: [embed] });
+            try { await user.send(`You have been **muted** in **${interaction.guild.name}**\nReason: ${reason}`); } catch {}
         } catch {
-            await interaction.reply({ content: 'فشل الميوت ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to mute ❌' });
         }
     }
 
@@ -222,21 +247,31 @@ client.on('interactionCreate', async interaction => {
         const user = interaction.options.getMember('user');
         try {
             await user.timeout(null);
-            await interaction.reply({ content: `تم رفع الميوت عن ${user.user.tag} ✅`, flags: 64 });
+            await interaction.reply({ content: `${user.user.tag} has been unmuted ✅` });
+            try { await user.send(`You have been **unmuted** in **${interaction.guild.name}**`); } catch {}
         } catch {
-            await interaction.reply({ content: 'فشل رفع الميوت ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to unmute ❌' });
         }
     }
 
     if (commandName === 'timeout') {
         const user = interaction.options.getMember('user');
         const minutes = interaction.options.getInteger('minutes');
-        const reason = interaction.options.getString('reason') || 'No reason';
+        const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
             await user.timeout(minutes * 60 * 1000, reason);
-            await interaction.reply({ content: `تم تايم اوت ${user.user.tag} لمدة ${minutes} دقيقة ✅`, flags: 64 });
+            const embed = new EmbedBuilder()
+                .setColor('Yellow')
+                .setTitle('Member Timed Out')
+                .addFields(
+                    { name: 'User', value: `${user.user.tag}`, inline: true },
+                    { name: 'Duration', value: `${minutes} minutes`, inline: true },
+                    { name: 'Reason', value: reason, inline: true }
+                );
+            await interaction.reply({ embeds: [embed] });
+            try { await user.send(`You have been **timed out** in **${interaction.guild.name}** for ${minutes} minutes\nReason: ${reason}`); } catch {}
         } catch {
-            await interaction.reply({ content: 'فشل التايم اوت ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to timeout ❌' });
         }
     }
 
@@ -244,9 +279,10 @@ client.on('interactionCreate', async interaction => {
         const user = interaction.options.getMember('user');
         try {
             await user.timeout(null);
-            await interaction.reply({ content: `تم رفع التايم اوت عن ${user.user.tag} ✅`, flags: 64 });
+            await interaction.reply({ content: `Timeout removed from ${user.user.tag} ✅` });
+            try { await user.send(`Your **timeout** has been removed in **${interaction.guild.name}**`); } catch {}
         } catch {
-            await interaction.reply({ content: 'فشل رفع التايم اوت ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to remove timeout ❌' });
         }
     }
 
@@ -254,27 +290,27 @@ client.on('interactionCreate', async interaction => {
         const amount = interaction.options.getInteger('amount');
         try {
             await interaction.channel.bulkDelete(amount, true);
-            await interaction.reply({ content: `تم حذف ${amount} رسالة ✅`, flags: 64 });
+            await interaction.reply({ content: `Deleted ${amount} messages ✅` });
         } catch {
-            await interaction.reply({ content: 'فشل الحذف ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to delete messages ❌' });
         }
     }
 
     if (commandName === 'lock') {
         try {
             await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
-            await interaction.reply({ content: 'تم قفل القناة 🔒' });
+            await interaction.reply({ content: '🔒 Channel locked' });
         } catch {
-            await interaction.reply({ content: 'فشل القفل ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to lock ❌' });
         }
     }
 
     if (commandName === 'unlock') {
         try {
             await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: true });
-            await interaction.reply({ content: 'تم فتح القناة 🔓' });
+            await interaction.reply({ content: '🔓 Channel unlocked' });
         } catch {
-            await interaction.reply({ content: 'فشل الفتح ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to unlock ❌' });
         }
     }
 
@@ -283,9 +319,9 @@ client.on('interactionCreate', async interaction => {
         const role = interaction.options.getRole('role');
         try {
             await user.roles.add(role);
-            await interaction.reply({ content: `تم إعطاء رول ${role.name} لـ ${user.user.tag} ✅`, flags: 64 });
+            await interaction.reply({ content: `Role **${role.name}** given to ${user.user.tag} ✅` });
         } catch {
-            await interaction.reply({ content: 'فشل إعطاء الرول ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to give role ❌' });
         }
     }
 
@@ -294,9 +330,9 @@ client.on('interactionCreate', async interaction => {
         const role = interaction.options.getRole('role');
         try {
             await user.roles.remove(role);
-            await interaction.reply({ content: `تم إزالة رول ${role.name} من ${user.user.tag} ✅`, flags: 64 });
+            await interaction.reply({ content: `Role **${role.name}** removed from ${user.user.tag} ✅` });
         } catch {
-            await interaction.reply({ content: 'فشل إزالة الرول ❌', flags: 64 });
+            await interaction.reply({ content: 'Failed to remove role ❌' });
         }
     }
 
@@ -305,16 +341,26 @@ client.on('interactionCreate', async interaction => {
         const reason = interaction.options.getString('reason');
         if (!warnings.has(user.id)) warnings.set(user.id, []);
         warnings.get(user.id).push({ reason, date: new Date().toLocaleDateString() });
-        await interaction.reply({ content: `تم تحذير ${user.tag} بسبب: ${reason} ✅`, flags: 64 });
+        const totalWarnings = warnings.get(user.id).length;
+        const embed = new EmbedBuilder()
+            .setColor('Yellow')
+            .setTitle('Member Warned')
+            .addFields(
+                { name: 'User', value: `${user.tag}`, inline: true },
+                { name: 'Reason', value: reason, inline: true },
+                { name: 'Total Warnings', value: `${totalWarnings}`, inline: true }
+            );
+        await interaction.reply({ embeds: [embed] });
+        try { await user.send(`You have received a **warning** in **${interaction.guild.name}**\nReason: ${reason}\nTotal warnings: ${totalWarnings}`); } catch {}
     }
 
     if (commandName === 'unwarn') {
         const user = interaction.options.getUser('user');
         if (warnings.has(user.id) && warnings.get(user.id).length > 0) {
             warnings.get(user.id).pop();
-            await interaction.reply({ content: `تم حذف آخر تحذير من ${user.tag} ✅`, flags: 64 });
+            await interaction.reply({ content: `Last warning removed from ${user.tag} ✅` });
         } else {
-            await interaction.reply({ content: 'لا يوجد تحذيرات ❌', flags: 64 });
+            await interaction.reply({ content: 'This user has no warnings ❌' });
         }
     }
 
@@ -322,37 +368,37 @@ client.on('interactionCreate', async interaction => {
         const user = interaction.options.getUser('user');
         const userWarnings = warnings.get(user.id) || [];
         if (userWarnings.length === 0) {
-            await interaction.reply({ content: `${user.tag} ليس لديه تحذيرات ✅`, flags: 64 });
+            await interaction.reply({ content: `${user.tag} has no warnings ✅` });
         } else {
             const embed = new EmbedBuilder()
-                .setTitle(`تحذيرات ${user.tag}`)
+                .setTitle(`Warnings - ${user.tag}`)
                 .setColor('Red')
                 .setDescription(userWarnings.map((w, i) => `**${i + 1}.** ${w.reason} - ${w.date}`).join('\n'));
-            await interaction.reply({ embeds: [embed], flags: 64 });
+            await interaction.reply({ embeds: [embed] });
         }
     }
 
     if (commandName === 'help') {
         const embed = new EmbedBuilder()
-            .setTitle('📋 قائمة الأوامر')
+            .setTitle('📋 Commands List')
             .setColor('Blue')
             .addFields(
-                { name: '📨 /dm', value: 'إرسال رسالة لجميع الأعضاء' },
-                { name: '👢 /kick', value: 'طرد عضو' },
-                { name: '🔨 /ban', value: 'بان عضو' },
-                { name: '✅ /unban', value: 'رفع البان' },
-                { name: '🔇 /mute', value: 'ميوت عضو' },
-                { name: '🔊 /unmute', value: 'رفع الميوت' },
-                { name: '⏱️ /timeout', value: 'تايم اوت عضو' },
-                { name: '✅ /untimeout', value: 'رفع التايم اوت' },
-                { name: '🗑️ /clear', value: 'حذف رسائل' },
-                { name: '🔒 /lock', value: 'قفل القناة' },
-                { name: '🔓 /unlock', value: 'فتح القناة' },
-                { name: '🎭 /giverole', value: 'إعطاء رول' },
-                { name: '❌ /removerole', value: 'إزالة رول' },
-                { name: '⚠️ /warn', value: 'تحذير عضو' },
-                { name: '✅ /unwarn', value: 'حذف تحذير' },
-                { name: '📋 /warnings', value: 'عرض تحذيرات عضو' }
+                { name: '📨 /dm', value: 'Send a message to all members' },
+                { name: '👢 /kick', value: 'Kick a member' },
+                { name: '🔨 /ban', value: 'Ban a member' },
+                { name: '✅ /unban', value: 'Unban a member' },
+                { name: '🔇 /mute', value: 'Mute a member' },
+                { name: '🔊 /unmute', value: 'Unmute a member' },
+                { name: '⏱️ /timeout', value: 'Timeout a member' },
+                { name: '✅ /untimeout', value: 'Remove timeout' },
+                { name: '🗑️ /clear', value: 'Delete messages' },
+                { name: '🔒 /lock', value: 'Lock the channel' },
+                { name: '🔓 /unlock', value: 'Unlock the channel' },
+                { name: '🎭 /giverole', value: 'Give a role' },
+                { name: '❌ /removerole', value: 'Remove a role' },
+                { name: '⚠️ /warn', value: 'Warn a member' },
+                { name: '✅ /unwarn', value: 'Remove a warning' },
+                { name: '📋 /warnings', value: 'Show member warnings' }
             );
         await interaction.reply({ embeds: [embed] });
     }
