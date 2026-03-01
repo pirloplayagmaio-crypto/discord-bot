@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+javascriptconst { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 
 const token = process.env.TOKEN;
@@ -177,38 +177,38 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (commandName === 'kick') {
-        const user = interaction.options.getMember('user');
+        const member = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
-            await user.kick(reason);
+            try { await member.send(`You have been **kicked** from **${interaction.guild.name}**\n**Reason:** ${reason}`); } catch {}
+            await member.kick(reason);
             const embed = new EmbedBuilder()
                 .setColor('Orange')
                 .setTitle('Member Kicked')
                 .addFields(
-                    { name: 'User', value: `${user.user.tag}`, inline: true },
+                    { name: 'User', value: `${member.user.tag}`, inline: true },
                     { name: 'Reason', value: reason, inline: true }
                 );
             await interaction.reply({ embeds: [embed] });
-            try { await user.send(`You have been **kicked** from **${interaction.guild.name}**\nReason: ${reason}`); } catch {}
         } catch {
             await interaction.reply({ content: 'Failed to kick ❌' });
         }
     }
 
     if (commandName === 'ban') {
-        const user = interaction.options.getMember('user');
+        const member = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
-            await user.ban({ reason });
+            try { await member.send(`You have been **banned** from **${interaction.guild.name}**\n**Reason:** ${reason}`); } catch {}
+            await member.ban({ reason });
             const embed = new EmbedBuilder()
                 .setColor('Red')
                 .setTitle('Member Banned')
                 .addFields(
-                    { name: 'User', value: `${user.user.tag}`, inline: true },
+                    { name: 'User', value: `${member.user.tag}`, inline: true },
                     { name: 'Reason', value: reason, inline: true }
                 );
             await interaction.reply({ embeds: [embed] });
-            try { await user.send(`You have been **banned** from **${interaction.guild.name}**\nReason: ${reason}`); } catch {}
         } catch {
             await interaction.reply({ content: 'Failed to ban ❌' });
         }
@@ -225,62 +225,62 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (commandName === 'mute') {
-        const user = interaction.options.getMember('user');
+        const member = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
-            await user.timeout(28 * 24 * 60 * 60 * 1000, reason);
+            try { await member.send(`You have been **muted** in **${interaction.guild.name}**\n**Reason:** ${reason}`); } catch {}
+            await member.timeout(28 * 24 * 60 * 60 * 1000, reason);
             const embed = new EmbedBuilder()
                 .setColor('Grey')
                 .setTitle('Member Muted')
                 .addFields(
-                    { name: 'User', value: `${user.user.tag}`, inline: true },
+                    { name: 'User', value: `${member.user.tag}`, inline: true },
                     { name: 'Reason', value: reason, inline: true }
                 );
             await interaction.reply({ embeds: [embed] });
-            try { await user.send(`You have been **muted** in **${interaction.guild.name}**\nReason: ${reason}`); } catch {}
         } catch {
             await interaction.reply({ content: 'Failed to mute ❌' });
         }
     }
 
     if (commandName === 'unmute') {
-        const user = interaction.options.getMember('user');
+        const member = interaction.options.getMember('user');
         try {
-            await user.timeout(null);
-            await interaction.reply({ content: `${user.user.tag} has been unmuted ✅` });
-            try { await user.send(`You have been **unmuted** in **${interaction.guild.name}**`); } catch {}
+            await member.timeout(null);
+            try { await member.send(`You have been **unmuted** in **${interaction.guild.name}**`); } catch {}
+            await interaction.reply({ content: `${member.user.tag} has been unmuted ✅` });
         } catch {
             await interaction.reply({ content: 'Failed to unmute ❌' });
         }
     }
 
     if (commandName === 'timeout') {
-        const user = interaction.options.getMember('user');
+        const member = interaction.options.getMember('user');
         const minutes = interaction.options.getInteger('minutes');
         const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
-            await user.timeout(minutes * 60 * 1000, reason);
+            try { await member.send(`You have been **timed out** in **${interaction.guild.name}** for **${minutes} minutes**\n**Reason:** ${reason}`); } catch {}
+            await member.timeout(minutes * 60 * 1000, reason);
             const embed = new EmbedBuilder()
                 .setColor('Yellow')
                 .setTitle('Member Timed Out')
                 .addFields(
-                    { name: 'User', value: `${user.user.tag}`, inline: true },
+                    { name: 'User', value: `${member.user.tag}`, inline: true },
                     { name: 'Duration', value: `${minutes} minutes`, inline: true },
                     { name: 'Reason', value: reason, inline: true }
                 );
             await interaction.reply({ embeds: [embed] });
-            try { await user.send(`You have been **timed out** in **${interaction.guild.name}** for ${minutes} minutes\nReason: ${reason}`); } catch {}
         } catch {
             await interaction.reply({ content: 'Failed to timeout ❌' });
         }
     }
 
     if (commandName === 'untimeout') {
-        const user = interaction.options.getMember('user');
+        const member = interaction.options.getMember('user');
         try {
-            await user.timeout(null);
-            await interaction.reply({ content: `Timeout removed from ${user.user.tag} ✅` });
-            try { await user.send(`Your **timeout** has been removed in **${interaction.guild.name}**`); } catch {}
+            await member.timeout(null);
+            try { await member.send(`Your **timeout** has been removed in **${interaction.guild.name}**`); } catch {}
+            await interaction.reply({ content: `Timeout removed from ${member.user.tag} ✅` });
         } catch {
             await interaction.reply({ content: 'Failed to remove timeout ❌' });
         }
@@ -315,66 +315,65 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (commandName === 'giverole') {
-        const user = interaction.options.getMember('user');
+        const member = interaction.options.getMember('user');
         const role = interaction.options.getRole('role');
         try {
-            await user.roles.add(role);
-            await interaction.reply({ content: `Role **${role.name}** given to ${user.user.tag} ✅` });
+            await member.roles.add(role);
+            await interaction.reply({ content: `Role **${role.name}** given to ${member.user.tag} ✅` });
         } catch {
             await interaction.reply({ content: 'Failed to give role ❌' });
         }
     }
 
     if (commandName === 'removerole') {
-        const user = interaction.options.getMember('user');
+        const member = interaction.options.getMember('user');
         const role = interaction.options.getRole('role');
         try {
-            await user.roles.remove(role);
-            await interaction.reply({ content: `Role **${role.name}** removed from ${user.user.tag} ✅` });
+            await member.roles.remove(role);
+            await interaction.reply({ content: `Role **${role.name}** removed from ${member.user.tag} ✅` });
         } catch {
             await interaction.reply({ content: 'Failed to remove role ❌' });
         }
     }
 
     if (commandName === 'warn') {
-    const member = interaction.options.getMember('user');
-    const user = member.user;
-    const reason = interaction.options.getString('reason');
-    if (!warnings.has(user.id)) warnings.set(user.id, []);
-    warnings.get(user.id).push({ reason, date: new Date().toLocaleDateString() });
-    const totalWarnings = warnings.get(user.id).length;
-    const embed = new EmbedBuilder()
-        .setColor('Yellow')
-        .setTitle('Member Warned')
-        .addFields(
-            { name: 'User', value: `${user.tag}`, inline: true },
-            { name: 'Reason', value: reason, inline: true },
-            { name: 'Total Warnings', value: `${totalWarnings}`, inline: true }
-        );
-    await interaction.reply({ embeds: [embed] });
-    try { 
-        await member.send(`⚠️ You have received a warning in **${interaction.guild.name}**\n**Reason:** ${reason}\n**Total warnings:** ${totalWarnings}`); 
-    } catch {}
-}
+        const member = interaction.options.getMember('user');
+        const reason = interaction.options.getString('reason');
+        if (!warnings.has(member.user.id)) warnings.set(member.user.id, []);
+        warnings.get(member.user.id).push({ reason, date: new Date().toLocaleDateString() });
+        const totalWarnings = warnings.get(member.user.id).length;
+        try { 
+            await member.send(`⚠️ You have received a **warning** in **${interaction.guild.name}**\n**Reason:** ${reason}\n**Total warnings:** ${totalWarnings}`); 
+        } catch {}
+        const embed = new EmbedBuilder()
+            .setColor('Yellow')
+            .setTitle('Member Warned')
+            .addFields(
+                { name: 'User', value: `${member.user.tag}`, inline: true },
+                { name: 'Reason', value: reason, inline: true },
+                { name: 'Total Warnings', value: `${totalWarnings}`, inline: true }
+            );
+        await interaction.reply({ embeds: [embed] });
+    }
 
     if (commandName === 'unwarn') {
-        const user = interaction.options.getUser('user');
-        if (warnings.has(user.id) && warnings.get(user.id).length > 0) {
-            warnings.get(user.id).pop();
-            await interaction.reply({ content: `Last warning removed from ${user.tag} ✅` });
+        const member = interaction.options.getMember('user');
+        if (warnings.has(member.user.id) && warnings.get(member.user.id).length > 0) {
+            warnings.get(member.user.id).pop();
+            await interaction.reply({ content: `Last warning removed from ${member.user.tag} ✅` });
         } else {
             await interaction.reply({ content: 'This user has no warnings ❌' });
         }
     }
 
     if (commandName === 'warnings') {
-        const user = interaction.options.getUser('user');
-        const userWarnings = warnings.get(user.id) || [];
+        const member = interaction.options.getMember('user');
+        const userWarnings = warnings.get(member.user.id) || [];
         if (userWarnings.length === 0) {
-            await interaction.reply({ content: `${user.tag} has no warnings ✅` });
+            await interaction.reply({ content: `${member.user.tag} has no warnings ✅` });
         } else {
             const embed = new EmbedBuilder()
-                .setTitle(`Warnings - ${user.tag}`)
+                .setTitle(`Warnings - ${member.user.tag}`)
                 .setColor('Red')
                 .setDescription(userWarnings.map((w, i) => `**${i + 1}.** ${w.reason} - ${w.date}`).join('\n'));
             await interaction.reply({ embeds: [embed] });
