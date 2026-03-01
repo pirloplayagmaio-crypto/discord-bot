@@ -103,5 +103,6 @@ client.on('interactionCreate', async interaction => {
         await interaction.editReply({ content: `تم إرسال الرسالة لـ ${successCount} عضو ✅` });
     }
 });
-
+process.on('unhandledRejection', () => {});
+process.on('uncaughtException', () => {});
 client.login(token);
