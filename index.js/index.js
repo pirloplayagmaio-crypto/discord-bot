@@ -15,57 +15,43 @@ const client = new Client({
     ]
 });
 
-// تخزين التحذيرات
 const warnings = new Map();
 
 const commands = [
-    // DM
     new SlashCommandBuilder()
         .setName('dm')
         .setDescription('Send a DM to all members')
         .addStringOption(o => o.setName('message').setDescription('Your message').setRequired(true))
         .addStringOption(o => o.setName('image').setDescription('Image or GIF link (optional)').setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-
-    // Kick
     new SlashCommandBuilder()
         .setName('kick')
         .setDescription('Kick a member')
         .addUserOption(o => o.setName('user').setDescription('User to kick').setRequired(true))
         .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
-
-    // Ban
     new SlashCommandBuilder()
         .setName('ban')
         .setDescription('Ban a member')
         .addUserOption(o => o.setName('user').setDescription('User to ban').setRequired(true))
         .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
-
-    // Unban
     new SlashCommandBuilder()
         .setName('unban')
         .setDescription('Unban a member')
         .addStringOption(o => o.setName('userid').setDescription('User ID to unban').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
-
-    // Mute
     new SlashCommandBuilder()
         .setName('mute')
         .setDescription('Mute a member')
         .addUserOption(o => o.setName('user').setDescription('User to mute').setRequired(true))
         .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
-
-    // Unmute
     new SlashCommandBuilder()
         .setName('unmute')
         .setDescription('Unmute a member')
         .addUserOption(o => o.setName('user').setDescription('User to unmute').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
-
-    // Timeout
     new SlashCommandBuilder()
         .setName('timeout')
         .setDescription('Timeout a member')
@@ -73,76 +59,55 @@ const commands = [
         .addIntegerOption(o => o.setName('minutes').setDescription('Duration in minutes').setRequired(true))
         .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
-
-    // Untimeout
     new SlashCommandBuilder()
         .setName('untimeout')
         .setDescription('Remove timeout from a member')
         .addUserOption(o => o.setName('user').setDescription('User to untimeout').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
-
-    // Clear
     new SlashCommandBuilder()
         .setName('clear')
         .setDescription('Clear messages')
         .addIntegerOption(o => o.setName('amount').setDescription('Number of messages (1-100)').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
-
-    // Lock
     new SlashCommandBuilder()
         .setName('lock')
         .setDescription('Lock the channel')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
-
-    // Unlock
     new SlashCommandBuilder()
         .setName('unlock')
         .setDescription('Unlock the channel')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
-
-    // Give Role
     new SlashCommandBuilder()
         .setName('giverole')
         .setDescription('Give a role to a member')
         .addUserOption(o => o.setName('user').setDescription('User').setRequired(true))
         .addRoleOption(o => o.setName('role').setDescription('Role to give').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
-
-    // Remove Role
     new SlashCommandBuilder()
         .setName('removerole')
         .setDescription('Remove a role from a member')
         .addUserOption(o => o.setName('user').setDescription('User').setRequired(true))
         .addRoleOption(o => o.setName('role').setDescription('Role to remove').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
-
-    // Warn
     new SlashCommandBuilder()
         .setName('warn')
         .setDescription('Warn a member')
         .addUserOption(o => o.setName('user').setDescription('User to warn').setRequired(true))
         .addStringOption(o => o.setName('reason').setDescription('Reason').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
-
-    // Unwarn
     new SlashCommandBuilder()
         .setName('unwarn')
         .setDescription('Remove last warning from a member')
         .addUserOption(o => o.setName('user').setDescription('User').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
-
-    // Warnings
     new SlashCommandBuilder()
         .setName('warnings')
         .setDescription('Show warnings of a member')
         .addUserOption(o => o.setName('user').setDescription('User').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
-
-    // Help
     new SlashCommandBuilder()
         .setName('help')
         .setDescription('Show all commands'),
-
 ].map(c => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(token);
@@ -174,7 +139,7 @@ function joinVoice(guild) {
     } catch (e) {}
 }
 
-client.once('ready', () => {
+client.once('clientReady', () => {
     console.log(`Logged in as ${client.user.tag}`);
     client.guilds.cache.forEach(guild => joinVoice(guild));
 });
@@ -190,14 +155,12 @@ process.on('uncaughtException', () => {});
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-
     const { commandName } = interaction;
 
-    // DM
     if (commandName === 'dm') {
         const text = interaction.options.getString('message');
         const imageUrl = interaction.options.getString('image');
-        await interaction.reply({ content: 'جاري إرسال الرسائل... ⏳', ephemeral: true });
+        await interaction.reply({ content: 'جاري إرسال الرسائل... ⏳', flags: 64 });
         const members = await interaction.guild.members.fetch();
         let successCount = 0;
         for (const [, member] of members) {
@@ -213,178 +176,162 @@ client.on('interactionCreate', async interaction => {
         await interaction.editReply({ content: `تم إرسال الرسالة لـ ${successCount} عضو ✅` });
     }
 
-    // Kick
     if (commandName === 'kick') {
         const user = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') || 'No reason';
         try {
             await user.kick(reason);
-            await interaction.reply({ content: `تم طرد ${user.user.tag} ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم طرد ${user.user.tag} ✅`, flags: 64 });
         } catch {
-            await interaction.reply({ content: 'فشل الطرد ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل الطرد ❌', flags: 64 });
         }
     }
 
-    // Ban
     if (commandName === 'ban') {
         const user = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') || 'No reason';
         try {
             await user.ban({ reason });
-            await interaction.reply({ content: `تم بان ${user.user.tag} ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم بان ${user.user.tag} ✅`, flags: 64 });
         } catch {
-            await interaction.reply({ content: 'فشل البان ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل البان ❌', flags: 64 });
         }
     }
 
-    // Unban
     if (commandName === 'unban') {
         const userId = interaction.options.getString('userid');
         try {
             await interaction.guild.members.unban(userId);
-            await interaction.reply({ content: `تم رفع البان ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم رفع البان ✅`, flags: 64 });
         } catch {
-            await interaction.reply({ content: 'فشل رفع البان ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل رفع البان ❌', flags: 64 });
         }
     }
 
-    // Mute
     if (commandName === 'mute') {
         const user = interaction.options.getMember('user');
         try {
             await user.timeout(28 * 24 * 60 * 60 * 1000);
-            await interaction.reply({ content: `تم ميوت ${user.user.tag} ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم ميوت ${user.user.tag} ✅`, flags: 64 });
         } catch {
-            await interaction.reply({ content: 'فشل الميوت ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل الميوت ❌', flags: 64 });
         }
     }
 
-    // Unmute
     if (commandName === 'unmute') {
         const user = interaction.options.getMember('user');
         try {
             await user.timeout(null);
-            await interaction.reply({ content: `تم رفع الميوت عن ${user.user.tag} ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم رفع الميوت عن ${user.user.tag} ✅`, flags: 64 });
         } catch {
-            await interaction.reply({ content: 'فشل رفع الميوت ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل رفع الميوت ❌', flags: 64 });
         }
     }
 
-    // Timeout
     if (commandName === 'timeout') {
         const user = interaction.options.getMember('user');
         const minutes = interaction.options.getInteger('minutes');
         const reason = interaction.options.getString('reason') || 'No reason';
         try {
             await user.timeout(minutes * 60 * 1000, reason);
-            await interaction.reply({ content: `تم تايم اوت ${user.user.tag} لمدة ${minutes} دقيقة ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم تايم اوت ${user.user.tag} لمدة ${minutes} دقيقة ✅`, flags: 64 });
         } catch {
-            await interaction.reply({ content: 'فشل التايم اوت ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل التايم اوت ❌', flags: 64 });
         }
     }
 
-    // Untimeout
     if (commandName === 'untimeout') {
         const user = interaction.options.getMember('user');
         try {
             await user.timeout(null);
-            await interaction.reply({ content: `تم رفع التايم اوت عن ${user.user.tag} ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم رفع التايم اوت عن ${user.user.tag} ✅`, flags: 64 });
         } catch {
-            await interaction.reply({ content: 'فشل رفع التايم اوت ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل رفع التايم اوت ❌', flags: 64 });
         }
     }
 
-    // Clear
     if (commandName === 'clear') {
         const amount = interaction.options.getInteger('amount');
         try {
             await interaction.channel.bulkDelete(amount, true);
-            await interaction.reply({ content: `تم حذف ${amount} رسالة ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم حذف ${amount} رسالة ✅`, flags: 64 });
         } catch {
-            await interaction.reply({ content: 'فشل الحذف ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل الحذف ❌', flags: 64 });
         }
     }
 
-    // Lock
     if (commandName === 'lock') {
         try {
             await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
             await interaction.reply({ content: 'تم قفل القناة 🔒' });
         } catch {
-            await interaction.reply({ content: 'فشل القفل ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل القفل ❌', flags: 64 });
         }
     }
 
-    // Unlock
     if (commandName === 'unlock') {
         try {
             await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: true });
             await interaction.reply({ content: 'تم فتح القناة 🔓' });
         } catch {
-            await interaction.reply({ content: 'فشل الفتح ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل الفتح ❌', flags: 64 });
         }
     }
 
-    // Give Role
     if (commandName === 'giverole') {
         const user = interaction.options.getMember('user');
         const role = interaction.options.getRole('role');
         try {
             await user.roles.add(role);
-            await interaction.reply({ content: `تم إعطاء رول ${role.name} لـ ${user.user.tag} ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم إعطاء رول ${role.name} لـ ${user.user.tag} ✅`, flags: 64 });
         } catch {
-            await interaction.reply({ content: 'فشل إعطاء الرول ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل إعطاء الرول ❌', flags: 64 });
         }
     }
 
-    // Remove Role
     if (commandName === 'removerole') {
         const user = interaction.options.getMember('user');
         const role = interaction.options.getRole('role');
         try {
             await user.roles.remove(role);
-            await interaction.reply({ content: `تم إزالة رول ${role.name} من ${user.user.tag} ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم إزالة رول ${role.name} من ${user.user.tag} ✅`, flags: 64 });
         } catch {
-            await interaction.reply({ content: 'فشل إزالة الرول ❌', ephemeral: true });
+            await interaction.reply({ content: 'فشل إزالة الرول ❌', flags: 64 });
         }
     }
 
-    // Warn
     if (commandName === 'warn') {
         const user = interaction.options.getUser('user');
         const reason = interaction.options.getString('reason');
         if (!warnings.has(user.id)) warnings.set(user.id, []);
         warnings.get(user.id).push({ reason, date: new Date().toLocaleDateString() });
-        await interaction.reply({ content: `تم تحذير ${user.tag} بسبب: ${reason} ✅`, ephemeral: true });
+        await interaction.reply({ content: `تم تحذير ${user.tag} بسبب: ${reason} ✅`, flags: 64 });
     }
 
-    // Unwarn
     if (commandName === 'unwarn') {
         const user = interaction.options.getUser('user');
         if (warnings.has(user.id) && warnings.get(user.id).length > 0) {
             warnings.get(user.id).pop();
-            await interaction.reply({ content: `تم حذف آخر تحذير من ${user.tag} ✅`, ephemeral: true });
+            await interaction.reply({ content: `تم حذف آخر تحذير من ${user.tag} ✅`, flags: 64 });
         } else {
-            await interaction.reply({ content: 'لا يوجد تحذيرات ❌', ephemeral: true });
+            await interaction.reply({ content: 'لا يوجد تحذيرات ❌', flags: 64 });
         }
     }
 
-    // Warnings
     if (commandName === 'warnings') {
         const user = interaction.options.getUser('user');
         const userWarnings = warnings.get(user.id) || [];
         if (userWarnings.length === 0) {
-            await interaction.reply({ content: `${user.tag} ليس لديه تحذيرات ✅`, ephemeral: true });
+            await interaction.reply({ content: `${user.tag} ليس لديه تحذيرات ✅`, flags: 64 });
         } else {
             const embed = new EmbedBuilder()
                 .setTitle(`تحذيرات ${user.tag}`)
                 .setColor('Red')
                 .setDescription(userWarnings.map((w, i) => `**${i + 1}.** ${w.reason} - ${w.date}`).join('\n'));
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: 64 });
         }
     }
 
-    // Help
     if (commandName === 'help') {
         const embed = new EmbedBuilder()
             .setTitle('📋 قائمة الأوامر')
