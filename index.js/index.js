@@ -49,23 +49,26 @@ const rest = new REST({ version: '10' }).setToken(token);
 })();
 
 function joinVoice(guild) {
-    const channel = guild.channels.cache.get(voiceChannelId);
-    if (!channel) return;
-    joinVoiceChannel({
-        channelId: voiceChannelId,
-        guildId: guild.id,
-        adapterCreator: guild.voiceAdapterCreator,
-        selfDeaf: false
-    });
+    try {
+        const channel = guild.channels.cache.get(voiceChannelId);
+        if (!channel) return;
+        const connection = joinVoiceChannel({
+            channelId: voiceChannelId,
+            guildId: guild.id,
+            adapterCreator: guild.voiceAdapterCreator,
+            selfDeaf: false
+        });
+        connection.on('error', () => {
+            setTimeout(() => joinVoice(guild), 5000);
+        });
+    } catch (e) {}
 }
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}`);
-    // دخول المكالمة في كل السيرفرات
     client.guilds.cache.forEach(guild => joinVoice(guild));
 });
 
-// إعادة الدخول لو طرد البوت من المكالمة
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (oldState.member.id === client.user.id && !newState.channelId) {
         setTimeout(() => {
@@ -73,6 +76,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
         }, 3000);
     }
 });
+
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
