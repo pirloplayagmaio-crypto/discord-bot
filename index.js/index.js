@@ -337,22 +337,25 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (commandName === 'warn') {
-        const user = interaction.options.getUser('user');
-        const reason = interaction.options.getString('reason');
-        if (!warnings.has(user.id)) warnings.set(user.id, []);
-        warnings.get(user.id).push({ reason, date: new Date().toLocaleDateString() });
-        const totalWarnings = warnings.get(user.id).length;
-        const embed = new EmbedBuilder()
-            .setColor('Yellow')
-            .setTitle('Member Warned')
-            .addFields(
-                { name: 'User', value: `${user.tag}`, inline: true },
-                { name: 'Reason', value: reason, inline: true },
-                { name: 'Total Warnings', value: `${totalWarnings}`, inline: true }
-            );
-        await interaction.reply({ embeds: [embed] });
-        try { await user.send(`You have received a **warning** in **${interaction.guild.name}**\nReason: ${reason}\nTotal warnings: ${totalWarnings}`); } catch {}
-    }
+    const member = interaction.options.getMember('user');
+    const user = member.user;
+    const reason = interaction.options.getString('reason');
+    if (!warnings.has(user.id)) warnings.set(user.id, []);
+    warnings.get(user.id).push({ reason, date: new Date().toLocaleDateString() });
+    const totalWarnings = warnings.get(user.id).length;
+    const embed = new EmbedBuilder()
+        .setColor('Yellow')
+        .setTitle('Member Warned')
+        .addFields(
+            { name: 'User', value: `${user.tag}`, inline: true },
+            { name: 'Reason', value: reason, inline: true },
+            { name: 'Total Warnings', value: `${totalWarnings}`, inline: true }
+        );
+    await interaction.reply({ embeds: [embed] });
+    try { 
+        await member.send(`⚠️ You have received a warning in **${interaction.guild.name}**\n**Reason:** ${reason}\n**Total warnings:** ${totalWarnings}`); 
+    } catch {}
+}
 
     if (commandName === 'unwarn') {
         const user = interaction.options.getUser('user');
