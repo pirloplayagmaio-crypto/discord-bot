@@ -67,12 +67,12 @@ client.once('ready', () => {
 
 // إعادة الدخول لو طرد البوت من المكالمة
 client.on('voiceStateUpdate', (oldState, newState) => {
-    const connection = getVoiceConnection(oldState.guild.id);
-    if (!connection) {
-        joinVoice(oldState.guild);
+    if (oldState.member.id === client.user.id && !newState.channelId) {
+        setTimeout(() => {
+            joinVoice(oldState.guild);
+        }, 3000);
     }
 });
-
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
